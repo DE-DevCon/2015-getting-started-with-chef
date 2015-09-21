@@ -1,0 +1,8 @@
+{
+  "run_list": ["recipe[demo]" ],
+  "lamp_test": {
+    "environment": {
+      "ROLE_VARIABLE": "SOLO"
+    }
+  }
+}

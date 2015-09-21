@@ -1,0 +1,7 @@
+log_level :info
+log_location STDOUT
+node_name "{YOUR_USER_NAME}"
+client_key "#{ENV['HOME']}/.chef/{YOUR_KEY}.pem"
+chef_server_url "https://api.opscode.com/organizations/{YOUR_ORGANIZATION}"
+
+knife[:digital_ocean_access_token] = "{YOUR_DIGITAL_OCEAN_ACCESS_TOKEN}"

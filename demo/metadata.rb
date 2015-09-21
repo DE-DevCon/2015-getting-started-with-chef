@@ -1,0 +1,12 @@
+name 'demo'
+maintainer 'Robert Bittle'
+maintainer_email 'robert.bittle@dominionenterprises.com'
+license 'MIT'
+description 'Demonstration cookbook for DE Devcon 2015'
+version '1.0'
+
+depends 'apt'
+depends 'mysql'
+depends 'apache2'
+depends 'php'
+depends 'git'

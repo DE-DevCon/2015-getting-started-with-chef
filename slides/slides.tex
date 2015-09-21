@@ -1,0 +1,162 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{multicol}
+\usetheme{Berlin}
+\setbeamercolor{palette secondary}{use=seahorse}
+\usecolortheme{seahorse}
+\title[Getting Started with Chef]{Getting Started with Chef}
+\author{\hspace{12pt}Robert “Anthony” Bittle\hspace{12pt}\\\hspace{12pt}robert.bittle@dominionenterprises.com\hspace{12pt}\\\hspace{12pt}github.com/guywithnose\hspace{12pt}}
+\date{October 8, 2015}
+\setbeamertemplate{itemize items}[circle]
+\begin{document}
+    \begin{frame}
+        \titlepage
+        Slides and demos at:\\
+        \href{https://github.com/guywithnose/2015-getting-started-with-chef}{https://github.com/guywithnose/2015-getting-started-with-chef}
+        \href{https://goo.gl/GTsdg7}{https://goo.gl/GTsdg7}
+    \end{frame}
+
+    \section{What is Chef?}
+    \subsection{What is Chef?}
+    \begin{frame}{IT Automation}
+        \begin{itemize}
+            \item Server Provisioning
+            \item Configuration Management
+            \item Code Deployment
+        \end{itemize}
+    \end{frame}
+    \begin{frame}{Environment Management}
+        \begin{itemize}
+            \item Manage a Scalable Cloud Environment
+            \item Manage Server Configuration with Version Control
+        \end{itemize}
+    \end{frame}
+    \section{Components}
+    \subsection{Components}
+    \begin{frame}{Resources}
+        Resources are the smallest action item.  Ideally they should only do one thing.\\
+        \medskip
+        \texttt{directory '/tmp/folder' do\\~~owner 'root'\\~~group 'root'\\~~mode '0755'\\~~action :create\\end\\}
+    \end{frame}
+    \begin{frame}{Recipes}
+        Recipes use resources to accomplish a common task.\\(Example: Install Nginx)
+    \end{frame}
+    \begin{frame}{Cookbooks}
+        Cookbooks are make up of multiple recipes that will generally be used together.\\
+        Cookbooks can include other cookbooks.\\
+        \medskip
+        We're going to go over setting up a simple cookbook that provisions a LAMP server and deploys a specific revision from version control.
+    \end{frame}
+
+    \section{Cookbook Directory Structure}
+    \subsection{Cookbook Directory Structure}
+    \begin{frame}{Recipes}
+        $\{MY\_COOKBOOK\_DIRECTORY\}/recipes$\\
+        Every file in this directory can be included as a recipe.\\
+        \bigskip
+        $\{MY\_COOKBOOK\_DIRECTORY\}/recipes/awesome.rb$\\
+        Can be included with:\\
+        $include\_recipe~~'my\_cookbook::awesome'$\\
+        \bigskip
+        $\{MY\_COOKBOOK\_DIRECTORY\}/recipes/default.rb$\\
+        Can be included with:\\
+        $include\_recipe~~'my\_cookbook'$\\
+    \end{frame}
+    \begin{frame}{Attributes}
+        $\{MY\_COOKBOOK\_DIRECTORY\}/attributes/default.rb$\\
+        This is where all your default configuration and settings go.\\
+    \end{frame}
+    \begin{frame}{Custom Resources and Providers}
+        $\{MY\_COOKBOOK\_DIRECTORY\}/resources$\\
+        $\{MY\_COOKBOOK\_DIRECTORY\}/providers$\\
+        \bigskip
+        This is where you can implement your own resources, extending chef to accomplish a specific task.\\
+        \bigskip
+        In general each resource file has a corresponding provider file.\\
+        \bigskip
+        Resources are similar to header files in that they describe the interface of a resource and the provider file contains the implementation.\\
+    \end{frame}
+    \section{Dependency Management}
+    \subsection{Dependency Management}
+    \begin{frame}{Including Recipes From Other Cookbooks}
+        As you develop your own recipes you will want to depend on other recipes.  For example a LAMP could start with this:
+        \medskip
+        \texttt{
+            include\_recipe 'mysql'\\
+            include\_recipe 'php'\\
+            include\_recipe 'apache2'\\
+        }
+    \end{frame}
+    \begin{frame}{These Other Cookbooks Need Other Cookbooks}
+        You could manually download each of these recipes, but this quickly becomes impractical.\\
+        \bigskip
+        For example the php recipe depends on all of these recipes:\\
+        build-essential\\
+        iis\\
+        mysql\\
+        windows\\
+        xml\\
+        yum-epel\\
+    \end{frame}
+    \begin{frame}{Berkshelf Saves the Day}
+        To make this more practical you'll need to use \textbf{Berkshelf} for cookbook dependency management.\\
+        To include recipes you need to create a metadata file very similar to a composer.json, package.js, Gemfile, etc.\\
+        \medskip
+        \texttt{depends 'mysql', '\textasciitilde> 6.0'\\
+            depends 'apache2'\\
+            depends 'php'\\
+        }
+    \end{frame}
+    \section{A Simple Example}
+    \subsection{A Simple Example}
+    \begin{frame}{Set Up MySQL}
+        \texttt{inclue\_recipe 'mysql'\\
+            mysql\_service 'demo' do\\
+            ~~port '3306'\\
+            ~~version '5.6'\\
+            ~~data\_dir '/data'\\
+            ~~initial\_root\_password 'suPer\$3crEt'\\
+            ~~action [:create, :start]\\
+            end\\
+        }
+    \end{frame}
+    \begin{frame}{Set Up PHP}
+        \texttt{include\_recipe 'php'\\
+            include\_recipe 'php::module\_mysql'\\
+        }
+    \end{frame}
+    \begin{frame}{Set Up Apache}
+        \textbf{attributes:}\\
+        \small\texttt{default[:apache][:default\_modules] = ['php5']}\\
+        \medskip
+        \textbf{recipe:}\\
+        \small\texttt{include\_recipe 'apache2'\\
+            template "\#\{node[:apache][:dir]\}/sites-available/lamp-test.conf" do\\
+            ~~source 'lamp-test.erb'\\
+            ~~owner 'root'\\
+            ~~group node[:apache][:root\_group]\\
+            ~~mode '0644'\\
+            ~~notifies :restart, 'service[apache2]'\\
+            end\\
+            \medskip
+            apache\_site 'lamp-test' do\\
+            ~~enable true\\
+            end\\
+        }
+    \end{frame}
+    \begin{frame}{Deploy Code}
+        \texttt{include\_recipe 'git'\\
+            \medskip
+            deploy\_revision 'lamptest' do\\
+            ~~revision 'master'\\
+            ~~repository 'https://github.com/guywithnose/lamp-test.git'\\
+            ~~deploy\_to '/var/www/lamp-test'\\
+            ~~purge\_before\_symlink.clear()\\
+            ~~create\_dirs\_before\_symlink.clear()\\
+            ~~symlink\_before\_migrate.clear()\\
+            ~~symlinks.clear()\\
+            end
+        }
+    \end{frame}
+\end{document}

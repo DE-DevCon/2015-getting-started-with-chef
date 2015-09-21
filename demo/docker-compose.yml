@@ -1,0 +1,6 @@
+chef:
+    image: guywithnose/chef
+    volumes:
+        - .:/code
+    ports:
+        - "8081:80"

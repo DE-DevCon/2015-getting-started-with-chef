@@ -1,0 +1,5 @@
+source "https://supermarket.getchef.com"
+
+metadata
+
+cookbook 'apache2', git: 'https://github.com/guywithnose/apache2.git'

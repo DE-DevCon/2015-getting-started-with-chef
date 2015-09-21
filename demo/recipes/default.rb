@@ -1,0 +1,5 @@
+include_recipe 'apt'
+include_recipe 'demo::mysql'
+include_recipe 'php'
+include_recipe 'php::module_mysql'
+include_recipe 'demo::lamp_test'
